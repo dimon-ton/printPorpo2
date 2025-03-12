@@ -4,19 +4,20 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 
-# Step 1: Register the Thai font
-font_path = "DSN-LaiThai.ttf"  # Path to your Thai font file
-pdfmetrics.registerFont(TTFont("DSN-LaiThai", font_path))
 
-# Step 3: Read the existing PDF and overlay the Thai text
+FONT_NAME = "DSN-LaiThai"
+FONT_SIZE = 20 
+
+font_path = "DSN-LaiThai.ttf"  # Path to your Thai font file
+pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
+
 existing_pdf_path = "examples.pdf"  # Path to your existing PDF
 output_pdf_path = "output_with_thai_text.pdf"
 
-# Read the existing PDF
 existing_pdf = PdfReader(existing_pdf_path)
 output_pdf = PdfWriter()
 
-# Add the first page of the existing PDF to the output PDF
+# read pdf file in first page
 page = existing_pdf.pages[0]
 
 page.rotate(90)
@@ -24,37 +25,66 @@ page.rotate(90)
 page_width = float(page.mediabox.upper_right[0])
 page_height = float(page.mediabox.upper_right[1])
 
-# page.mediabox.upper_right = (page_height, page_width)
-# output_pdf.add_page(page)
-
-
-# new_page_width = float(page.mediabox.upper_right[0])
-# new_page_height = float(page.mediabox.upper_right[1])
 
 print(page_width)
 print(page_height)
 
-# Step 2: Create a temporary PDF with Thai text using ReportLab
+# create canvas for editing PDF file 
 packet = BytesIO()  # In-memory buffer to hold the overlay PDF
-can = canvas.Canvas(packet, pagesize=(page_height, page_width))
+can = canvas.Canvas(packet, pagesize=(page_width, page_height))
 
 # Set the font to the registered Thai font
-can.setFont("DSN-LaiThai", 16)  # Font size 16
+can.setFont(FONT_NAME, FONT_SIZE)  # Font size 16
 
 
 # Add Thai text to the PDF
-thai_text = "นายธนวัฒน์ PDF"
-
-
-text_width = can.stringWidth(thai_text, "DSN-LaiThai", 16)
-page_center = (page_width - text_width) / 2
+name = "นายณรงค์ฤทธิ์ สมรูป"
+text_width = can.stringWidth(name, FONT_NAME, FONT_SIZE)
+page_center = (page_height - text_width) / 2
 
 can.saveState()
 
 can.translate(page_width, 0)
 can.rotate(90)
 
-can.drawString(0, 0, thai_text)  # Position (x=50, y=750)
+can.drawString(page_center, 265, name)  # Position (x=50, y=750)
+
+birthNum = "๒๔"
+birthMonth = "กุมภาพันธ์"
+birthYear = "๒๕๕๒"
+
+can.drawString(196, 232, birthNum)
+can.drawString(269, 232, birthMonth)
+can.drawString(405, 232, birthYear)
+
+# insert school name
+school_name = "โรงเรียนบ้านโพนแท่น"
+can.drawString(150, 178, school_name)
+
+# insert province name
+province_name = "ร้อยเอ็ด"
+can.drawString(155, 153, province_name)
+
+
+# insert office
+office_name = "สพป. ร้อยเอ็ด เขต ๒"
+can.drawString(310, 153, office_name)
+
+# insert graduated date
+graduated_date = "๓๑"
+graduated_month = "มีนาคม"
+graduated_year = "๒๕๖๘"
+
+can.drawString(195, 126, graduated_date)
+can.drawString(285, 126, graduated_month)
+can.drawString(400, 126, graduated_year)
+
+# insert signature end
+dotted_line = 90*"."
+dotted_width = can.stringWidth(dotted_line, FONT_NAME, FONT_SIZE)
+dotted_page_center = (page_height - dotted_width) / 2
+can.drawString(dotted_page_center, 60, dotted_line)
+
 
 can.restoreState()
 
