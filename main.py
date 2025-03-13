@@ -3,6 +3,7 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
+from reportlab.lib.colors import red, green
 
 from openpyxl import load_workbook
 
@@ -58,7 +59,7 @@ print(list_data)
 print(list_data[0][1])
 # import pdb; pdb.set_trace()
 
-remove_background = True
+remove_background = True 
 
 FONT_NAME = "DSN-LaiThai"
 FONT_SIZE = 20 
@@ -101,9 +102,9 @@ for data in list_data:
     # insert running number
 
     
-
+    can.setFillColor(green)
     running_number = convert_to_thai_number(data[0])
-    can.drawString(500, 368, running_number)
+    can.drawString(500, 367, running_number)
 
     # insert name of student
     name = f"{data[1]}{data[2]} {data[3]}" 
