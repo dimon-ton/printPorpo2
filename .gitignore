@@ -7,5 +7,3 @@ certificate_config.json
 # Excel temp files
 ~$*.xlsx
 *.tmp
-# Font files
-*.ttf

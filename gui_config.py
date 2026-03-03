@@ -4,7 +4,7 @@ Allows users to configure certificate template data and generate certificates.
 """
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, colorchooser
 import json
 import os
 import subprocess
@@ -16,7 +16,7 @@ class CertificateConfigGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Thai Certificate Generator - Configuration")
-        self.root.geometry("650x750")
+        self.root.geometry("650x650")
         self.root.resizable(True, True)
 
         # Configure Thai font support
@@ -33,27 +33,26 @@ class CertificateConfigGUI:
 
     def setup_thai_font(self):
         """Setup Thai font for GUI elements."""
-        # Try to register Google Sans Thai font if available
-        font_file = "GoogleSansThai.ttf"
-        if os.path.exists(font_file):
-            try:
-                # Register the font with tkinter
-                self.thai_font = tkfont.Font(family="Google Sans Thai", size=11)
-                self.thai_font_bold = tkfont.Font(family="Google Sans Thai", size=12, weight="bold")
-                self.thai_font_title = tkfont.Font(family="Google Sans Thai", size=14, weight="bold")
-                self.font_available = True
-            except Exception:
-                # Fallback to system fonts
-                self.thai_font = tkfont.Font(family="Segoe UI", size=11)
-                self.thai_font_bold = tkfont.Font(family="Segoe UI", size=12, weight="bold")
-                self.thai_font_title = tkfont.Font(family="Segoe UI", size=14, weight="bold")
-                self.font_available = False
+        # GoogleSans for English labels, Sarabun for Thai text entry
+        self.google_sans_exists = os.path.exists("GoogleSans.ttf")
+        self.sarabun_exists = os.path.exists("Sarabun.ttf")
+
+        # Set up fonts
+        if self.google_sans_exists:
+            self.label_font = ("GoogleSans", 12)
+            self.label_font_bold = ("GoogleSans", 16, "bold")
+            self.label_font_header = ("GoogleSans", 14, "bold")
         else:
-            # Use system Thai-compatible fonts
-            self.thai_font = tkfont.Font(family="Segoe UI", size=11)
-            self.thai_font_bold = tkfont.Font(family="Segoe UI", size=12, weight="bold")
-            self.thai_font_title = tkfont.Font(family="Segoe UI", size=14, weight="bold")
-            self.font_available = False
+            self.label_font = ("Segoe UI", 12)
+            self.label_font_bold = ("Segoe UI", 16, "bold")
+            self.label_font_header = ("Segoe UI", 14, "bold")
+
+        # Sarabun for Thai text fields (has proper Thai glyph support)
+        if self.sarabun_exists:
+            self.thai_entry_font = ("Sarabun", 16)
+        else:
+            # Fallback to Tahoma which has Thai support on Windows
+            self.thai_entry_font = ("Tahoma", 16)
 
     def setup_styles(self):
         """Setup custom styles for widgets."""
@@ -70,18 +69,28 @@ class CertificateConfigGUI:
         defaults = {
             "school_name": "โรงเรียนบ้านโพนแท่น",
             "province_name": "ร้อยเอ็ด",
-            "office_name": "สพป. ร้อยเอ็ด เขต ๒",
-            "graduated_date": "๓๑",
+            "office_name": "สพป. ร้อยเอ็ด เขต 2",
+            "graduated_date": "31",
             "graduated_month": "มีนาคม",
-            "graduated_year": "๒๕๖๘",
+            "graduated_year": "2568",
             "head_teacher_name": "(นางสาวอำพร วรวงษ์)",
             "position_name": "รักษาการในตำแหน่งผู้อำนวยการโรงเรียนบ้านโพนแท่น",
             "excel_file": "name_list.xlsx",
             "template_pdf": "examples.pdf",
             "output_pdf": "output_with_thai_text.pdf",
-            "font_file": "GoogleSansThai.ttf",
+            "font_file": "DSN-LaiThai.ttf",
             "font_size": "20",
-            "remove_background": "True"
+            "remove_background": "True",
+            # Color options
+            "color_running_number": "#00AA00",
+            "color_student_name": "#000000",
+            "color_birth_date": "#000000",
+            "color_school_name": "#000000",
+            "color_province": "#000000",
+            "color_office": "#000000",
+            "color_graduation_date": "#000000",
+            "color_signer": "#000000",
+            "color_position": "#000000"
         }
 
         if os.path.exists(self.config_file):
@@ -110,6 +119,17 @@ class CertificateConfigGUI:
         self.config["font_size"] = self.font_size_var.get()
         self.config["remove_background"] = self.remove_background_var.get()
 
+        # Save colors
+        self.config["color_running_number"] = self.color_running_var.get()
+        self.config["color_student_name"] = self.color_student_var.get()
+        self.config["color_birth_date"] = self.color_birth_var.get()
+        self.config["color_school_name"] = self.color_school_var.get()
+        self.config["color_province"] = self.color_province_var.get()
+        self.config["color_office"] = self.color_office_var.get()
+        self.config["color_graduation_date"] = self.color_graduation_var.get()
+        self.config["color_signer"] = self.color_signer_var.get()
+        self.config["color_position"] = self.color_position_var.get()
+
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, ensure_ascii=False, indent=2)
@@ -135,6 +155,17 @@ class CertificateConfigGUI:
         self.font_size_var.set(self.config.get("font_size", "20"))
         self.remove_background_var.set(self.config.get("remove_background", "True"))
 
+        # Load colors
+        self.color_running_var.set(self.config.get("color_running_number", "#00AA00"))
+        self.color_student_var.set(self.config.get("color_student_name", "#000000"))
+        self.color_birth_var.set(self.config.get("color_birth_date", "#000000"))
+        self.color_school_var.set(self.config.get("color_school_name", "#000000"))
+        self.color_province_var.set(self.config.get("color_province", "#000000"))
+        self.color_office_var.set(self.config.get("color_office", "#000000"))
+        self.color_graduation_var.set(self.config.get("color_graduation_date", "#000000"))
+        self.color_signer_var.set(self.config.get("color_signer", "#000000"))
+        self.color_position_var.set(self.config.get("color_position", "#000000"))
+
     def create_widgets(self):
         """Create all GUI widgets."""
 
@@ -154,7 +185,13 @@ class CertificateConfigGUI:
 
         self.create_file_fields(file_frame)
 
-        # Tab 3: Advanced Settings
+        # Tab 3: Colors
+        color_frame = ttk.Frame(notebook, padding="15")
+        notebook.add(color_frame, text="Colors")
+
+        self.create_color_fields(color_frame)
+
+        # Tab 4: Advanced Settings
         adv_frame = ttk.Frame(notebook, padding="15")
         notebook.add(adv_frame, text="Advanced")
 
@@ -185,51 +222,27 @@ class CertificateConfigGUI:
 
         row = 0
         tk.Label(container, text="Certificate Text Configuration / การตั้งค่าข้อมูลประกาศ",
-                font=("Segoe UI", 12, "bold"), fg="#2c3e50").grid(row=row, column=0, columnspan=2,
+                font=self.label_font_bold, fg="#2c3e50").grid(row=row, column=0, columnspan=2,
                                                                   pady=(0, 15), sticky='w')
 
         self.create_input_row(container, "School Name / ชื่อโรงเรียน:", self.school_name_var, row=1)
         self.create_input_row(container, "Province Name / จังหวัด:", self.province_name_var, row=2)
-        self.create_input_row(container, "Office Name / สำนักงาน:", self.office_name_var, row=3)
+        self.create_input_row(container, "Office Name / สำนักงาน (พิมพ์เลขไทยได้):", self.office_name_var, row=3)
 
         row = 4
         tk.Label(container, text="Graduation Date / วันที่สำเร็จการศึกษา",
-                font=("Segoe UI", 10, "bold"), fg="#34495e").grid(row=row, column=0, columnspan=2,
+                font=self.label_font_header, fg="#34495e").grid(row=row, column=0, columnspan=2,
                                                                  pady=(15, 5), sticky='w')
-        self.create_input_row(container, "Date (Thai numerals) / วัน (เลขไทย):", self.graduated_date_var, row=5, width=10)
+        self.create_input_row(container, "Date (enter 0-9) / วัน:", self.graduated_date_var, row=5, width=10)
         self.create_input_row(container, "Month (Thai text) / เดือน:", self.graduated_month_var, row=6, width=15)
-        self.create_input_row(container, "Year (Thai numerals) / ปี (เลขไทย):", self.graduated_year_var, row=7, width=10)
+        self.create_input_row(container, "Year (enter 0-9) / ปี:", self.graduated_year_var, row=7, width=10)
 
         row = 8
         tk.Label(container, text="Signer Information / ข้อมูลผู้ลงนาม",
-                font=("Segoe UI", 10, "bold"), fg="#34495e").grid(row=row, column=0, columnspan=2,
+                font=self.label_font_header, fg="#34495e").grid(row=row, column=0, columnspan=2,
                                                                  pady=(15, 5), sticky='w')
         self.create_input_row(container, "Head Teacher Name / ชื่อผู้อำนวยการ:", self.head_teacher_name_var, row=9)
         self.create_input_row(container, "Position / ตำแหน่ง:", self.position_name_var, row=10)
-        self.office_name_var = tk.StringVar()
-        self.graduated_date_var = tk.StringVar()
-        self.graduated_month_var = tk.StringVar()
-        self.graduated_year_var = tk.StringVar()
-        self.head_teacher_name_var = tk.StringVar()
-        self.position_name_var = tk.StringVar()
-
-        row = 0
-        ttk.Label(parent, text="Certificate Text Configuration", font=('Arial', 12, 'bold')).grid(row=row, column=0, columnspan=2, pady=(0, 15), sticky='w')
-
-        self.create_input_row(parent, "School Name:", self.school_name_var, row=1)
-        self.create_input_row(parent, "Province Name:", self.province_name_var, row=2)
-        self.create_input_row(parent, "Office Name:", self.office_name_var, row=3)
-
-        row = 4
-        ttk.Label(parent, text="Graduation Date", font=('Arial', 10, 'bold')).grid(row=row, column=0, columnspan=2, pady=(15, 5), sticky='w')
-        self.create_input_row(parent, "Date (Thai numerals):", self.graduated_date_var, row=5, width=10)
-        self.create_input_row(parent, "Month (Thai text):", self.graduated_month_var, row=6, width=15)
-        self.create_input_row(parent, "Year (Thai numerals):", self.graduated_year_var, row=7, width=10)
-
-        row = 8
-        ttk.Label(parent, text="Signer Information", font=('Arial', 10, 'bold')).grid(row=row, column=0, columnspan=2, pady=(15, 5), sticky='w')
-        self.create_input_row(parent, "Head Teacher Name:", self.head_teacher_name_var, row=9)
-        self.create_input_row(parent, "Position:", self.position_name_var, row=10)
 
     def create_file_fields(self, parent):
         """Create file path input fields."""
@@ -238,7 +251,8 @@ class CertificateConfigGUI:
         self.output_pdf_var = tk.StringVar()
         self.font_file_var = tk.StringVar()
 
-        ttk.Label(parent, text="File Paths", font=('Arial', 12, 'bold')).grid(row=0, column=0, columnspan=3, pady=(0, 15), sticky='w')
+        tk.Label(parent, text="File Paths / เส้นทางไฟล์", font=self.label_font_bold, fg="#2c3e50").grid(
+            row=0, column=0, columnspan=3, pady=(0, 15), sticky='w')
 
         self.create_file_input_row(parent, "Excel Data File:", self.excel_file_var, 1,
                                    [("Excel files", "*.xlsx *.xls")])
@@ -254,29 +268,86 @@ class CertificateConfigGUI:
         self.font_size_var = tk.StringVar(value="20")
         self.remove_background_var = tk.StringVar(value="True")
 
-        ttk.Label(parent, text="Advanced Settings", font=('Arial', 12, 'bold')).grid(row=0, column=0, columnspan=2, pady=(0, 15), sticky='w')
+        tk.Label(parent, text="Advanced Settings / การตั้งค่าขั้นสูง", font=self.label_font_bold, fg="#2c3e50").grid(
+            row=0, column=0, columnspan=2, pady=(0, 15), sticky='w')
 
         self.create_input_row(parent, "Font Size:", self.font_size_var, row=1, width=10)
 
-        ttk.Label(parent, text="Remove Background:").grid(row=2, column=0, sticky='w', pady=5)
+        tk.Label(parent, text="Remove Background:", font=self.label_font).grid(row=2, column=0, sticky='w', pady=5)
         ttk.Combobox(parent, textvariable=self.remove_background_var,
                     values=["True", "False"], state="readonly", width=10).grid(row=2, column=1, sticky='w', pady=5)
 
-        ttk.Label(parent, text="(True = use overlay only, False = merge with template PDF)",
-                 font=('Arial', 8), foreground='gray').grid(row=3, column=0, columnspan=2, sticky='w')
+        tk.Label(parent, text="(True = use overlay only, False = merge with template PDF)",
+                 font=self.label_font, foreground='gray').grid(row=3, column=0, columnspan=2, sticky='w')
+
+    def create_color_fields(self, parent):
+        """Create color selection fields."""
+        # Initialize color variables
+        self.color_running_var = tk.StringVar(value="#00AA00")
+        self.color_student_var = tk.StringVar(value="#000000")
+        self.color_birth_var = tk.StringVar(value="#000000")
+        self.color_school_var = tk.StringVar(value="#000000")
+        self.color_province_var = tk.StringVar(value="#000000")
+        self.color_office_var = tk.StringVar(value="#000000")
+        self.color_graduation_var = tk.StringVar(value="#000000")
+        self.color_signer_var = tk.StringVar(value="#000000")
+        self.color_position_var = tk.StringVar(value="#000000")
+
+        # Store color buttons for updating
+        self.color_buttons = {}
+
+        tk.Label(parent, text="Font Colors / สีตัวอักษร", font=self.label_font_bold, fg="#2c3e50").grid(
+            row=0, column=0, columnspan=3, pady=(0, 15), sticky='w')
+
+        # Create color pickers for each element
+        self.create_color_picker(parent, 1, "Running Number / เลขที่:", self.color_running_var, "color_running")
+        self.create_color_picker(parent, 2, "Student Name / ชื่อนักเรียน:", self.color_student_var, "color_student")
+        self.create_color_picker(parent, 3, "Birth Date / วันเกิด:", self.color_birth_var, "color_birth")
+        self.create_color_picker(parent, 4, "School Name / ชื่อโรงเรียน:", self.color_school_var, "color_school")
+        self.create_color_picker(parent, 5, "Province / จังหวัด:", self.color_province_var, "color_province")
+        self.create_color_picker(parent, 6, "Office / สำนักงาน:", self.color_office_var, "color_office")
+        self.create_color_picker(parent, 7, "Graduation Date / วันที่สำเร็จ:", self.color_graduation_var, "color_graduation")
+        self.create_color_picker(parent, 8, "Signer Name / ผู้ลงนาม:", self.color_signer_var, "color_signer")
+        self.create_color_picker(parent, 9, "Position / ตำแหน่ง:", self.color_position_var, "color_position")
+
+    def create_color_picker(self, parent, row, label_text, color_var, button_key):
+        """Create a single color picker row."""
+        tk.Label(parent, text=label_text, font=self.thai_entry_font, fg="#2c3e50").grid(
+            row=row, column=0, sticky='w', pady=5, padx=(0, 10))
+
+        # Color preview button
+        color_btn = tk.Button(parent, text="  ", bg=color_var.get(), width=4)
+        color_btn.config(command=lambda v=color_var, b=color_btn: self.choose_color(v, b))
+        color_btn.grid(row=row, column=1, sticky='w', pady=5, padx=(0, 10))
+
+        # Store reference
+        self.color_buttons[button_key] = color_btn
+
+        # Hex value entry
+        tk.Entry(parent, textvariable=color_var, width=10, font=("GoogleSans", 10) if self.google_sans_exists else ("Tahoma", 10)).grid(
+            row=row, column=2, sticky='w', pady=5)
+
+    def choose_color(self, color_var, btn):
+        """Open color chooser dialog."""
+        current_color = color_var.get()
+        color = colorchooser.askcolor(title="Choose Color", initialcolor=current_color)
+        if color[1]:  # If user selected a color
+            color_var.set(color[1])
+            btn.config(bg=color[1])
 
     def create_input_row(self, parent, label, variable, row, width=40):
         """Helper to create a labeled input row with Thai font support."""
-        tk.Label(parent, text=label, font=("Segoe UI", 9), fg="#2c3e50").grid(
+        # Use GoogleSans for labels, Sarabun for Thai entry fields
+        tk.Label(parent, text=label, font=self.label_font, fg="#2c3e50").grid(
             row=row, column=0, sticky='w', pady=5, padx=(0, 10))
         entry = tk.Entry(parent, textvariable=variable, width=width,
-                        font=("Microsoft Sans Serif", 10), insertbackground="#2c3e50")
+                        font=self.thai_entry_font, insertbackground="#2c3e50")
         entry.grid(row=row, column=1, sticky='w', pady=5)
 
     def create_file_input_row(self, parent, label, variable, row, filetypes):
         """Helper to create a file input row with browse button."""
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky='w', pady=5, padx=(0, 10))
-        entry = ttk.Entry(parent, textvariable=variable, width=35)
+        tk.Label(parent, text=label, font=self.label_font, fg="#2c3e50").grid(row=row, column=0, sticky='w', pady=5, padx=(0, 10))
+        entry = tk.Entry(parent, textvariable=variable, width=35, font=("GoogleSans", 9) if self.google_sans_exists else ("Tahoma", 9))
         entry.grid(row=row, column=0, columnspan=1, sticky='e', pady=5, padx=(150, 0))
         ttk.Button(parent, text="Browse...", width=10,
                   command=lambda: self.browse_file(variable, filetypes)).grid(row=row, column=1, sticky='w', pady=5, padx=(5, 0))
@@ -330,8 +401,16 @@ class CertificateConfigGUI:
 
         # Run the certificate generation script
         try:
+            # Use virtual environment Python if available, otherwise use system Python
+            if os.name == 'nt':  # Windows
+                venv_python = os.path.join(os.getcwd(), "env", "Scripts", "python.exe")
+            else:  # Unix-like
+                venv_python = os.path.join(os.getcwd(), "env", "bin", "python")
+
+            python_exe = venv_python if os.path.exists(venv_python) else "python"
+
             result = subprocess.run(
-                ["python", "main.py"],
+                [python_exe, "main.py"],
                 capture_output=True,
                 text=True,
                 cwd=os.getcwd()
