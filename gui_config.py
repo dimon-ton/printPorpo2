@@ -119,16 +119,17 @@ class CertificateConfigGUI:
         self.config["font_size"] = self.font_size_var.get()
         self.config["remove_background"] = self.remove_background_var.get()
 
-        # Save colors
-        self.config["color_running_number"] = self.color_running_var.get()
-        self.config["color_student_name"] = self.color_student_var.get()
-        self.config["color_birth_date"] = self.color_birth_var.get()
-        self.config["color_school_name"] = self.color_school_var.get()
-        self.config["color_province"] = self.color_province_var.get()
-        self.config["color_office"] = self.color_office_var.get()
-        self.config["color_graduation_date"] = self.color_graduation_var.get()
-        self.config["color_signer"] = self.color_signer_var.get()
-        self.config["color_position"] = self.color_position_var.get()
+        # Save single color for all text fields
+        color = self.text_color_var.get()
+        self.config["color_running_number"] = color
+        self.config["color_student_name"] = color
+        self.config["color_birth_date"] = color
+        self.config["color_school_name"] = color
+        self.config["color_province"] = color
+        self.config["color_office"] = color
+        self.config["color_graduation_date"] = color
+        self.config["color_signer"] = color
+        self.config["color_position"] = color
 
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
@@ -155,16 +156,10 @@ class CertificateConfigGUI:
         self.font_size_var.set(self.config.get("font_size", "20"))
         self.remove_background_var.set(self.config.get("remove_background", "True"))
 
-        # Load colors
-        self.color_running_var.set(self.config.get("color_running_number", "#00AA00"))
-        self.color_student_var.set(self.config.get("color_student_name", "#000000"))
-        self.color_birth_var.set(self.config.get("color_birth_date", "#000000"))
-        self.color_school_var.set(self.config.get("color_school_name", "#000000"))
-        self.color_province_var.set(self.config.get("color_province", "#000000"))
-        self.color_office_var.set(self.config.get("color_office", "#000000"))
-        self.color_graduation_var.set(self.config.get("color_graduation_date", "#000000"))
-        self.color_signer_var.set(self.config.get("color_signer", "#000000"))
-        self.color_position_var.set(self.config.get("color_position", "#000000"))
+        # Load text color (use first color found from config)
+        color = self.config.get("color_student_name", "#000000")
+        self.text_color_var.set(color)
+        self.color_preview_btn.config(bg=color)
 
     def create_widgets(self):
         """Create all GUI widgets."""
@@ -185,13 +180,7 @@ class CertificateConfigGUI:
 
         self.create_file_fields(file_frame)
 
-        # Tab 3: Colors
-        color_frame = ttk.Frame(notebook, padding="15")
-        notebook.add(color_frame, text="Colors")
-
-        self.create_color_fields(color_frame)
-
-        # Tab 4: Advanced Settings
+        # Tab 3: Advanced Settings
         adv_frame = ttk.Frame(notebook, padding="15")
         notebook.add(adv_frame, text="Advanced")
 
@@ -267,6 +256,7 @@ class CertificateConfigGUI:
         """Create advanced settings fields."""
         self.font_size_var = tk.StringVar(value="20")
         self.remove_background_var = tk.StringVar(value="True")
+        self.text_color_var = tk.StringVar(value="#000000")
 
         tk.Label(parent, text="Advanced Settings / การตั้งค่าขั้นสูง", font=self.label_font_bold, fg="#2c3e50").grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w')
@@ -280,60 +270,31 @@ class CertificateConfigGUI:
         tk.Label(parent, text="(True = use overlay only, False = merge with template PDF)",
                  font=self.label_font, foreground='gray').grid(row=3, column=0, columnspan=2, sticky='w')
 
-    def create_color_fields(self, parent):
-        """Create color selection fields."""
-        # Initialize color variables
-        self.color_running_var = tk.StringVar(value="#00AA00")
-        self.color_student_var = tk.StringVar(value="#000000")
-        self.color_birth_var = tk.StringVar(value="#000000")
-        self.color_school_var = tk.StringVar(value="#000000")
-        self.color_province_var = tk.StringVar(value="#000000")
-        self.color_office_var = tk.StringVar(value="#000000")
-        self.color_graduation_var = tk.StringVar(value="#000000")
-        self.color_signer_var = tk.StringVar(value="#000000")
-        self.color_position_var = tk.StringVar(value="#000000")
+        # Single color picker for all text
+        tk.Label(parent, text="Text Color / สีตัวอักษร:", font=self.label_font, fg="#2c3e50").grid(
+            row=4, column=0, sticky='w', pady=(15, 5))
 
-        # Store color buttons for updating
-        self.color_buttons = {}
+        color_frame = tk.Frame(parent)
+        color_frame.grid(row=4, column=1, sticky='w', pady=(15, 5))
 
-        tk.Label(parent, text="Font Colors / สีตัวอักษร", font=self.label_font_bold, fg="#2c3e50").grid(
-            row=0, column=0, columnspan=3, pady=(0, 15), sticky='w')
+        self.color_preview_btn = tk.Button(color_frame, text="  ", bg=self.text_color_var.get(), width=4,
+                                           command=self.choose_text_color)
+        self.color_preview_btn.pack(side='left', padx=(0, 5))
 
-        # Create color pickers for each element
-        self.create_color_picker(parent, 1, "Running Number / เลขที่:", self.color_running_var, "color_running")
-        self.create_color_picker(parent, 2, "Student Name / ชื่อนักเรียน:", self.color_student_var, "color_student")
-        self.create_color_picker(parent, 3, "Birth Date / วันเกิด:", self.color_birth_var, "color_birth")
-        self.create_color_picker(parent, 4, "School Name / ชื่อโรงเรียน:", self.color_school_var, "color_school")
-        self.create_color_picker(parent, 5, "Province / จังหวัด:", self.color_province_var, "color_province")
-        self.create_color_picker(parent, 6, "Office / สำนักงาน:", self.color_office_var, "color_office")
-        self.create_color_picker(parent, 7, "Graduation Date / วันที่สำเร็จ:", self.color_graduation_var, "color_graduation")
-        self.create_color_picker(parent, 8, "Signer Name / ผู้ลงนาม:", self.color_signer_var, "color_signer")
-        self.create_color_picker(parent, 9, "Position / ตำแหน่ง:", self.color_position_var, "color_position")
+        tk.Entry(color_frame, textvariable=self.text_color_var, width=10,
+                 font=("GoogleSans", 10) if self.google_sans_exists else ("Tahoma", 10),
+                 state='readonly').pack(side='left')
 
-    def create_color_picker(self, parent, row, label_text, color_var, button_key):
-        """Create a single color picker row."""
-        tk.Label(parent, text=label_text, font=self.thai_entry_font, fg="#2c3e50").grid(
-            row=row, column=0, sticky='w', pady=5, padx=(0, 10))
+        tk.Label(parent, text="(Applies to all text on the certificate)",
+                 font=self.label_font, foreground='gray').grid(row=5, column=0, columnspan=2, sticky='w')
 
-        # Color preview button
-        color_btn = tk.Button(parent, text="  ", bg=color_var.get(), width=4)
-        color_btn.config(command=lambda v=color_var, b=color_btn: self.choose_color(v, b))
-        color_btn.grid(row=row, column=1, sticky='w', pady=5, padx=(0, 10))
-
-        # Store reference
-        self.color_buttons[button_key] = color_btn
-
-        # Hex value entry
-        tk.Entry(parent, textvariable=color_var, width=10, font=("GoogleSans", 10) if self.google_sans_exists else ("Tahoma", 10)).grid(
-            row=row, column=2, sticky='w', pady=5)
-
-    def choose_color(self, color_var, btn):
-        """Open color chooser dialog."""
-        current_color = color_var.get()
-        color = colorchooser.askcolor(title="Choose Color", initialcolor=current_color)
-        if color[1]:  # If user selected a color
-            color_var.set(color[1])
-            btn.config(bg=color[1])
+    def choose_text_color(self):
+        """Open color chooser dialog for all text color."""
+        current_color = self.text_color_var.get()
+        color = colorchooser.askcolor(title="Choose Text Color / เลือกสีตัวอักษร", initialcolor=current_color)
+        if color[1]:
+            self.text_color_var.set(color[1])
+            self.color_preview_btn.config(bg=color[1])
 
     def create_input_row(self, parent, label, variable, row, width=40):
         """Helper to create a labeled input row with Thai font support."""
