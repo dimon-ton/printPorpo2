@@ -4,8 +4,49 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from io import BytesIO
 from reportlab.lib.colors import red, green
+import json
+import os
 
 from openpyxl import load_workbook
+
+
+def load_config():
+    """Load configuration from certificate_config.json if it exists."""
+    config_file = "certificate_config.json"
+    defaults = {
+        "school_name": "โรงเรียนบ้านโพนแท่น",
+        "province_name": "ร้อยเอ็ด",
+        "office_name": "สพป. ร้อยเอ็ด เขต ๒",
+        "graduated_date": "๓๑",
+        "graduated_month": "มีนาคม",
+        "graduated_year": "๒๕๖๘",
+        "head_teacher_name": "(นางสาวอำพร วรวงษ์)",
+        "position_name": "รักษาการในตำแหน่งผู้อำนวยการโรงเรียนบ้านโพนแท่น",
+        "excel_file": "name_list.xlsx",
+        "template_pdf": "examples.pdf",
+        "output_pdf": "output_with_thai_text.pdf",
+        "font_file": "DSN-LaiThai.ttf",
+        "font_size": 20,
+        "remove_background": True
+    }
+
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                # Convert string font_size to int and remove_background to bool
+                config["font_size"] = int(config.get("font_size", 20))
+                config["remove_background"] = config.get("remove_background", "True") == "True"
+                return {**defaults, **config}
+        except Exception as e:
+            print(f"Warning: Could not load config file: {e}")
+            print("Using default values.")
+
+    return defaults
+
+
+# Load configuration at module level
+CONFIG = load_config()
 
 
 def convert_to_thai_number(number_str):
@@ -52,23 +93,22 @@ def get_excel_data(file_path):
     return data
 
 
-file_path = "name_list.xlsx"
+# Use configuration values
+file_path = CONFIG["excel_file"]
 list_data = get_excel_data(file_path)
 
-print(list_data)
-print(list_data[0][1])
-# import pdb; pdb.set_trace()
+print(f"Loaded {len(list_data)} records from {file_path}")
 
-remove_background = True 
+remove_background = CONFIG["remove_background"]
 
-FONT_NAME = "DSN-LaiThai"
-FONT_SIZE = 20 
+FONT_NAME = os.path.splitext(CONFIG["font_file"])[0]  # Use filename without extension as font name
+FONT_SIZE = CONFIG["font_size"]
 
-font_path = "DSN-LaiThai.ttf"  # Path to your Thai font file
+font_path = CONFIG["font_file"]
 pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
 
-existing_pdf_path = "examples.pdf"  # Path to your existing PDF
-output_pdf_path = "output_with_thai_text.pdf"
+existing_pdf_path = CONFIG["template_pdf"]
+output_pdf_path = CONFIG["output_pdf"]
 
 existing_pdf = PdfReader(existing_pdf_path)
 output_pdf = PdfWriter()
@@ -122,22 +162,22 @@ for data in list_data:
     can.drawString(405, 232, birthYear)
 
     # insert school name
-    school_name = "โรงเรียนบ้านโพนแท่น"
+    school_name = CONFIG["school_name"]
     can.drawString(150, 178, school_name)
 
     # insert province name
-    province_name = "ร้อยเอ็ด"
+    province_name = CONFIG["province_name"]
     can.drawString(155, 153, province_name)
 
 
     # insert office
-    office_name = "สพป. ร้อยเอ็ด เขต ๒"
+    office_name = CONFIG["office_name"]
     can.drawString(310, 153, office_name)
 
     # insert graduated date
-    graduated_date = "๓๑"
-    graduated_month = "มีนาคม"
-    graduated_year = "๒๕๖๘"
+    graduated_date = CONFIG["graduated_date"]
+    graduated_month = CONFIG["graduated_month"]
+    graduated_year = CONFIG["graduated_year"]
 
     can.drawString(195, 126, graduated_date)
     can.drawString(285, 126, graduated_month)
@@ -150,14 +190,14 @@ for data in list_data:
     can.drawString(dotted_page_center, 60, dotted_line)
 
     # insert name head teacher
-    head_teacher_name = "(นางสาวอำพร วรวงษ์)"
+    head_teacher_name = CONFIG["head_teacher_name"]
     head_teacher_width = can.stringWidth(head_teacher_name, FONT_NAME, FONT_SIZE)
     head_page_center = (page_height - head_teacher_width) / 2
     can.drawString(head_page_center, 37, head_teacher_name)
 
 
     # insert position
-    position_name = "รักษาการในตำแหน่งผู้อำนวยการโรงเรียนบ้านโพนแท่น"
+    position_name = CONFIG["position_name"]
     position_name_width = can.stringWidth(position_name, FONT_NAME, FONT_SIZE)
     position_page_center = (page_height - position_name_width) / 2
     can.drawString(position_page_center, 13, position_name)

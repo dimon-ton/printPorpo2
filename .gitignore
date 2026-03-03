@@ -1,1 +1,6 @@
 env/
+# User-specific configuration file
+certificate_config.json
+# Excel temp files
+~$*.xlsx
+*.tmp
