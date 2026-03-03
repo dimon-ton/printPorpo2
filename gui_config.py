@@ -9,20 +9,61 @@ import json
 import os
 import subprocess
 from pathlib import Path
+import tkinter.font as tkfont
 
 
 class CertificateConfigGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Thai Certificate Generator - Configuration")
-        self.root.geometry("600x700")
-        self.root.resizable(False, False)
+        self.root.geometry("650x750")
+        self.root.resizable(True, True)
+
+        # Configure Thai font support
+        self.setup_thai_font()
 
         self.config_file = "certificate_config.json"
         self.config = self.load_config()
 
+        # Apply custom styles
+        self.setup_styles()
+
         self.create_widgets()
         self.load_widgets_from_config()
+
+    def setup_thai_font(self):
+        """Setup Thai font for GUI elements."""
+        # Try to register Google Sans Thai font if available
+        font_file = "GoogleSansThai.ttf"
+        if os.path.exists(font_file):
+            try:
+                # Register the font with tkinter
+                self.thai_font = tkfont.Font(family="Google Sans Thai", size=11)
+                self.thai_font_bold = tkfont.Font(family="Google Sans Thai", size=12, weight="bold")
+                self.thai_font_title = tkfont.Font(family="Google Sans Thai", size=14, weight="bold")
+                self.font_available = True
+            except Exception:
+                # Fallback to system fonts
+                self.thai_font = tkfont.Font(family="Segoe UI", size=11)
+                self.thai_font_bold = tkfont.Font(family="Segoe UI", size=12, weight="bold")
+                self.thai_font_title = tkfont.Font(family="Segoe UI", size=14, weight="bold")
+                self.font_available = False
+        else:
+            # Use system Thai-compatible fonts
+            self.thai_font = tkfont.Font(family="Segoe UI", size=11)
+            self.thai_font_bold = tkfont.Font(family="Segoe UI", size=12, weight="bold")
+            self.thai_font_title = tkfont.Font(family="Segoe UI", size=14, weight="bold")
+            self.font_available = False
+
+    def setup_styles(self):
+        """Setup custom styles for widgets."""
+        style = ttk.Style()
+
+        # Configure styles with Thai font support
+        style.configure("Header.TLabel", font=("Segoe UI", 12, "bold"))
+        style.configure("Thai.TLabel", font=("Microsoft Sans Serif", 10))
+        style.configure("Thai.TEntry", font=("Microsoft Sans Serif", 10))
+        style.configure("Title.TLabel", font=("Segoe UI", 14, "bold"))
 
     def load_config(self):
         """Load configuration from JSON file, or return defaults."""
@@ -38,7 +79,7 @@ class CertificateConfigGUI:
             "excel_file": "name_list.xlsx",
             "template_pdf": "examples.pdf",
             "output_pdf": "output_with_thai_text.pdf",
-            "font_file": "DSN-LaiThai.ttf",
+            "font_file": "GoogleSansThai.ttf",
             "font_size": "20",
             "remove_background": "True"
         }
@@ -129,8 +170,42 @@ class CertificateConfigGUI:
 
     def create_certificate_fields(self, parent):
         """Create certificate information input fields."""
+        # Use tk.Frame for better Thai font support
+        container = tk.Frame(parent)
+        container.pack(fill='both', expand=True)
+
         self.school_name_var = tk.StringVar()
         self.province_name_var = tk.StringVar()
+        self.office_name_var = tk.StringVar()
+        self.graduated_date_var = tk.StringVar()
+        self.graduated_month_var = tk.StringVar()
+        self.graduated_year_var = tk.StringVar()
+        self.head_teacher_name_var = tk.StringVar()
+        self.position_name_var = tk.StringVar()
+
+        row = 0
+        tk.Label(container, text="Certificate Text Configuration / การตั้งค่าข้อมูลประกาศ",
+                font=("Segoe UI", 12, "bold"), fg="#2c3e50").grid(row=row, column=0, columnspan=2,
+                                                                  pady=(0, 15), sticky='w')
+
+        self.create_input_row(container, "School Name / ชื่อโรงเรียน:", self.school_name_var, row=1)
+        self.create_input_row(container, "Province Name / จังหวัด:", self.province_name_var, row=2)
+        self.create_input_row(container, "Office Name / สำนักงาน:", self.office_name_var, row=3)
+
+        row = 4
+        tk.Label(container, text="Graduation Date / วันที่สำเร็จการศึกษา",
+                font=("Segoe UI", 10, "bold"), fg="#34495e").grid(row=row, column=0, columnspan=2,
+                                                                 pady=(15, 5), sticky='w')
+        self.create_input_row(container, "Date (Thai numerals) / วัน (เลขไทย):", self.graduated_date_var, row=5, width=10)
+        self.create_input_row(container, "Month (Thai text) / เดือน:", self.graduated_month_var, row=6, width=15)
+        self.create_input_row(container, "Year (Thai numerals) / ปี (เลขไทย):", self.graduated_year_var, row=7, width=10)
+
+        row = 8
+        tk.Label(container, text="Signer Information / ข้อมูลผู้ลงนาม",
+                font=("Segoe UI", 10, "bold"), fg="#34495e").grid(row=row, column=0, columnspan=2,
+                                                                 pady=(15, 5), sticky='w')
+        self.create_input_row(container, "Head Teacher Name / ชื่อผู้อำนวยการ:", self.head_teacher_name_var, row=9)
+        self.create_input_row(container, "Position / ตำแหน่ง:", self.position_name_var, row=10)
         self.office_name_var = tk.StringVar()
         self.graduated_date_var = tk.StringVar()
         self.graduated_month_var = tk.StringVar()
@@ -191,9 +266,11 @@ class CertificateConfigGUI:
                  font=('Arial', 8), foreground='gray').grid(row=3, column=0, columnspan=2, sticky='w')
 
     def create_input_row(self, parent, label, variable, row, width=40):
-        """Helper to create a labeled input row."""
-        ttk.Label(parent, text=label).grid(row=row, column=0, sticky='w', pady=5, padx=(0, 10))
-        entry = ttk.Entry(parent, textvariable=variable, width=width)
+        """Helper to create a labeled input row with Thai font support."""
+        tk.Label(parent, text=label, font=("Segoe UI", 9), fg="#2c3e50").grid(
+            row=row, column=0, sticky='w', pady=5, padx=(0, 10))
+        entry = tk.Entry(parent, textvariable=variable, width=width,
+                        font=("Microsoft Sans Serif", 10), insertbackground="#2c3e50")
         entry.grid(row=row, column=1, sticky='w', pady=5)
 
     def create_file_input_row(self, parent, label, variable, row, filetypes):
